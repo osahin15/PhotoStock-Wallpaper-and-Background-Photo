@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.text.SpannableString
 import android.text.style.UnderlineSpan
 import androidx.fragment.app.Fragment
@@ -42,11 +43,6 @@ class DetailsFragment : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         val view: View = inflater.inflate(R.layout.fragment_details, container, false)
-
-       var image =  view.findViewById<ImageView>(R.id.full_screen_photo)
-        Glide.with(requireContext()).load(imageId).centerCrop().into(image)
-
-
         return view
     }
 
@@ -54,6 +50,9 @@ class DetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
+
+        var image =  view.findViewById<ImageView>(R.id.full_screen_photo)
+        //Glide.with(requireContext()).load(imageId).centerCrop().into(image)
 
         var download = view.findViewById<ImageView>(R.id.save_btn)
         var share = view.findViewById<ImageView>(R.id.share_btn)
@@ -76,9 +75,24 @@ class DetailsFragment : Fragment() {
             }
         }
 
+        Handler().postDelayed({
+            linear_btn.visibility = View.GONE
+            backButton.visibility = View.GONE
+        },2000)
+
+        full_screen_photo.setOnClickListener {
+            if (linear_btn.visibility == View.GONE && backButton.visibility  == View.GONE){
+                linear_btn.visibility = View.VISIBLE
+                backButton.visibility = View.VISIBLE
+            }else{
+                linear_btn.visibility = View.GONE
+                backButton.visibility = View.GONE
+            }
+        }
 
         backButton.setOnClickListener {
-            navController.navigate(R.id.action_detailsFragment_to_feedFragment)
+            //navController.navigate(R.id.action_detailsFragment_to_feedFragment)
+            requireActivity().onBackPressed()
         }
 
         download.setOnClickListener {
@@ -92,6 +106,7 @@ class DetailsFragment : Fragment() {
 
         val unsplash = unsplash_link.text.toString()
         val nameLnk = name_link.text.toString()
+        name_link.text = underLine(nameLnk)
         unsplash_link.text = underLine(unsplash)
         unsplash_link.setOnClickListener {
             openLink(UNSPLASH_LINK)

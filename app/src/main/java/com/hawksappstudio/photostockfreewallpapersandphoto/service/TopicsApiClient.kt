@@ -20,4 +20,8 @@ class TopicsApiClient {
         return topicApi.getTopics(30)
     }
 
+    fun getTopicsPhoto(slug:String,page:Int) : Single<List<Model.Photo>>{
+        return topicApi.getTopicsPhoto(slug,30,page)
+    }
+
 }

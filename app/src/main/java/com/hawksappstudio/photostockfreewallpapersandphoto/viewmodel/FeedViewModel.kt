@@ -27,6 +27,64 @@ class FeedViewModel:ViewModel() {
     val photoLoading = MutableLiveData<Boolean>()
     val photoError = MutableLiveData<Boolean>()
 
+    val photoDataTopics = MutableLiveData<List<Model.Photo>>()
+    val photoDataTopicsHandle = MutableLiveData<List<Model.Photo>>()
+    val photoTopicLoading = MutableLiveData<Boolean>()
+    val photoTopicError = MutableLiveData<Boolean>()
+
+
+
+    fun photoTopicsFromApiHandle(slug: String,page: Int){
+        disposable.add(
+            topicApiClient.getTopicsPhoto(slug, page)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(object : DisposableSingleObserver<List<Model.Photo>>() {
+                    override fun onSuccess(t: List<Model.Photo>?) {
+                        if (t != null) {
+                            photoDataTopicsHandle.value = t
+                            photoTopicLoading.value = false
+                            photoTopicError.value = false
+                            Log.d("tgelen", "onSuccess: $t")
+                        }
+                    }
+
+                    override fun onError(e: Throwable?) {
+                        photoTopicError.value = true
+                        e?.printStackTrace()
+                        Log.d("topicPhotoListFromApi", "onError: $e")
+                    }
+
+                })
+        )
+    }
+
+
+    fun photoTopicsFromApi(slug:String,page:Int){
+        disposable.add(
+                topicApiClient.getTopicsPhoto(slug, page)
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeWith(object : DisposableSingleObserver<List<Model.Photo>>() {
+                            override fun onSuccess(t: List<Model.Photo>?) {
+                                if (t != null) {
+                                    photoDataTopics.value = t
+                                    photoTopicLoading.value = false
+                                    photoTopicError.value = false
+                                    Log.d("tgelen", "onSuccess: $t")
+                                }
+                            }
+
+                            override fun onError(e: Throwable?) {
+                                photoTopicError.value = true
+                                e?.printStackTrace()
+                                Log.d("topicPhotoListFromApi", "onError: $e")
+                            }
+
+                        })
+        )
+
+    }
     fun photoListFromApi(page:Int){
             disposable.add(
                 photoApiClient.getListPhoto(PER_PAGE, page).subscribeOn(Schedulers.newThread())
@@ -34,7 +92,7 @@ class FeedViewModel:ViewModel() {
                     .subscribeWith(object : DisposableSingleObserver<List<Model.Photo>>() {
                         override fun onSuccess(t: List<Model.Photo>?) {
                             if (t != null) {
-                                photoData.value = t
+                                photoData.value = t.map { it }
                                 photoLoading.value = false
                                 photoError.value = false
                             }
