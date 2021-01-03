@@ -7,7 +7,12 @@ class Model {
 
     //UIGxeHlXUJKZtsaj690S05zfFsMJKO0NSWdCWg2E5tc Access-key
 
-
+    data class Search(
+            @SerializedName("total_pages")
+            val total_pages : Int?,
+            @SerializedName("results")
+            val results : ArrayList<Photo>
+    )
 
 
     data class Photo(
@@ -40,13 +45,13 @@ class Model {
     )
     data class Location(
             @SerializedName("city")
-            val city:String,
+            val city:String? = null,
             @SerializedName("country")
-            val country:String
+            val country:String? = null
     )
     data class Exif(
             @SerializedName("model")
-            val model:String
+            val model:String? =null
     )
 
     data class User(
@@ -69,6 +74,8 @@ class Model {
         val thumb:String,
         @SerializedName("full")
         val full:String,
+        @SerializedName("regular")
+        val regular:String
     )
     
 

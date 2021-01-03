@@ -9,17 +9,19 @@
 
 
     <ImageView
+        android:adjustViewBounds="true"
         android:src="@color/black"
         android:id="@+id/full_screen_photo"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <ProgressBar
+        android:id="@+id/detailsProgress"
         android:nextFocusForward="@id/full_screen_photo"
         android:visibility="visible"
         android:layout_width="100dp"
@@ -30,6 +32,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         />
+    <TextView
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detailsError"
+        android:textColor="@color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
     <ImageView
         android:id="@+id/back_button"
         android:layout_width="wrap_content"
@@ -143,6 +155,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <TextView
+                android:id="@+id/location_text"
                 android:textStyle="bold"
                 android:layout_margin="5dp"
                 android:layout_width="wrap_content"
@@ -162,7 +175,7 @@
             <TextView
                 android:layout_marginTop="5dp"
                 android:id="@+id/photo_by"
-                android:textSize="12sp"
+                android:textSize="10sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Photo by "
@@ -177,7 +190,7 @@
                 android:textColorLink="@color/link_blue"
                 android:textColor="@color/link_blue"/>
             <TextView
-                android:textSize="12sp"
+                android:textSize="10sp"
                 android:layout_marginTop="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -188,6 +201,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=" Unsplash"
+                android:textSize="12sp"
                 android:id="@+id/unsplash_link"
                 android:autoLink="web"
                 android:textStyle="bold"
@@ -200,6 +214,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
             <TextView
+                android:textSize="8sp"
                 android:id="@+id/tag_info"
                 android:textStyle="italic"
                 android:layout_margin="5dp"

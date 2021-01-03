@@ -22,5 +22,9 @@ class PhotoApiClient {
 
         }
 
+        fun getPhotoDetails(id:String) : Single<Model.Photo>{
+                return  photoApi.getPhotoDetails(id)
+        }
+
 
 }
