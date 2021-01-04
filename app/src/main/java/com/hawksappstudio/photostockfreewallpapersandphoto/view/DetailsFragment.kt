@@ -177,15 +177,15 @@ class DetailsFragment : Fragment() {
         name_link.text = underLine(photo.user.name)
 
         var tagBuilder = StringBuilder()
-        if (photo.tags.size >= 5){
-            for (tag in 0..5){
-                tagBuilder.append("#").append(photo.tags[tag].title).append(" ")
-            }
-        }else {
+        if (photo.tags.isNotEmpty()){
             for (tag in photo.tags) {
                 tagBuilder.append("#").append(tag.title).append(" ")
             }
+        }else{
+            tagBuilder.append(" ")
         }
+
+
         tag_info.text = tagBuilder.toString()
 
         save_info.text = photo.downloads.toString()

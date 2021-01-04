@@ -18,7 +18,7 @@ import kotlinx.android.synthetic.main.staggered_item.view.*
 import xyz.belvi.blurhash.BlurHash
 import xyz.belvi.blurhash.blurPlaceHolder
 
-class StaggeredTopicPhotoAdapter(var context: Context, var selectedPhoto: SelectedPhoto) : RecyclerView.Adapter<StaggeredTopicPhotoAdapter.StaggeredTopicPhotoHolder>() {
+class StaggeredGridAdapterSearch(var context: Context, var selectedPhoto: SearchPhoto) : RecyclerView.Adapter<StaggeredGridAdapterSearch.StaggeredHolder>() {
 
     val blurHash : BlurHash = BlurHash(context,lruSize = 20,punch = 1f)
     private val set = ConstraintSet()
@@ -42,24 +42,25 @@ class StaggeredTopicPhotoAdapter(var context: Context, var selectedPhoto: Select
 
     val differ = AsyncListDiffer(this,differCallback)
 
-    inner class StaggeredTopicPhotoHolder(itemview: View): RecyclerView.ViewHolder(itemview) {
+    inner class StaggeredHolder(itemview: View): RecyclerView.ViewHolder(itemview) {
 
         init {
             itemview.setOnClickListener {
-                selectedPhoto.selectedPhoto(photoList[adapterPosition])
+                selectedPhoto.searchPhotoSelect(photoList[adapterPosition])
             }
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StaggeredTopicPhotoHolder{
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StaggeredHolder {
         var view : View = LayoutInflater.from(context).inflate(R.layout.staggered_item,parent,false)
-        return StaggeredTopicPhotoHolder(view)
+        return StaggeredHolder(view)
     }
 
     @SuppressLint("ResourceType")
-    override fun onBindViewHolder(holder: StaggeredTopicPhotoHolder, position: Int) {
+    override fun onBindViewHolder(holder: StaggeredHolder, position: Int) {
         //val photo = differ.currentList[position]
         val photo = photoList[position]
+        val string = "Photo by" + photo.user.name + "on Unsplash"
         holder.itemView.apply {
             if(photo.blurHash !=null){
                 Glide.with(context).setDefaultRequestOptions(requestOptions).load(photo.urls.thumb)
@@ -68,7 +69,7 @@ class StaggeredTopicPhotoAdapter(var context: Context, var selectedPhoto: Select
                     }
             }else{
                 Glide.with(context).setDefaultRequestOptions(requestOptions).load(photo.urls.thumb).centerCrop().fitCenter().thumbnail(0.3f)
-                    .into(imageStaggeredView)
+                        .into(imageStaggeredView)
             }
 
             //staggeredText.text = string
@@ -83,19 +84,18 @@ class StaggeredTopicPhotoAdapter(var context: Context, var selectedPhoto: Select
     override fun getItemCount(): Int {
         return photoList.size
     }
-    interface SelectedPhoto{
-        fun selectedPhoto(image: Model.Photo)
+    interface SearchPhoto{
+        fun searchPhotoSelect(image: Model.Photo)
     }
 
     fun updatePhotoList(newPhotoList:List<Model.Photo>){
         photoList.clear()
         photoList.addAll(newPhotoList)
-        //notifyItemRangeInserted(photoList.size,newPhotoList.size)
         notifyDataSetChanged()
     }
     fun addPhotoList(newPhotoList:List<Model.Photo>){
         photoList.addAll(newPhotoList)
         notifyItemRangeInserted(photoList.size,newPhotoList.size)
+
     }
-    //centerCrop().fitCenter().thumbnail(0.3f)
 }

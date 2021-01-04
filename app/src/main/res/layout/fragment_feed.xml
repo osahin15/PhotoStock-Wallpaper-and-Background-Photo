@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bgmain"
-    tools:context=".view.MainActivity">
+    tools:context=".view.MainActivity"
+    android:fitsSystemWindows="true">
 
 
     <AutoCompleteTextView
@@ -71,6 +72,30 @@
             android:paddingBottom="10dp"
 
            />
+    </com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayout>
+
+    <com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayout
+        android:id="@+id/searchSwipy"
+        android:visibility="gone"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:srl_direction="bottom"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/topic_linear"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <androidx.recyclerview.widget.RecyclerView
+            android:visibility="gone"
+            android:id="@+id/searchRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="5dp"
+            android:paddingStart="5dp"
+            android:paddingEnd="15dp"
+            android:paddingBottom="10dp"
+
+            />
 
 
     </com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayout>
@@ -176,42 +201,61 @@
         app:layout_constraintEnd_toEndOf="parent">
     </View>
 
+    <LinearLayout
+        android:fitsSystemWindows="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="35dp">
+
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/searchBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="35dp"
+        android:padding="10dp"
+        android:layout_margin="5dp"
         android:contentDescription="@string/search"
         android:src="@drawable/ic_baseline_search_24"
         app:backgroundTint="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:rippleColor="@color/white" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/closeSearchBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="35dp"
         android:contentDescription="@string/app_name"
         android:src="@drawable/ic_close"
+        android:padding="10dp"
+        android:layout_margin="5dp"
         android:visibility="gone"
         app:backgroundTint="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:rippleColor="@color/white" />
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/homeBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="35dp"
         android:contentDescription="@string/app_name"
         android:src="@drawable/ic_home"
+        android:padding="10dp"
+        android:layout_margin="5dp"
         android:visibility="gone"
         app:backgroundTint="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:rippleColor="@color/white" />
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/searchSend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/ic_send"
+        android:padding="10dp"
+        android:layout_margin="5dp"
+        android:visibility="gone"
+        app:backgroundTint="@color/white"
+        app:rippleColor="@color/white" />
+
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

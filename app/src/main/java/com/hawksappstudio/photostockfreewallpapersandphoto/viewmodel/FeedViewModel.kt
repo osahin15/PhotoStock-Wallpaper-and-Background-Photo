@@ -32,6 +32,59 @@ class FeedViewModel:ViewModel() {
     val photoTopicLoading = MutableLiveData<Boolean>()
     val photoTopicError = MutableLiveData<Boolean>()
 
+    val searchData = MutableLiveData<Model.Search>()
+    val searchDataHandle = MutableLiveData<Model.Search>()
+    val searchError = MutableLiveData<Boolean>()
+    val searchLoading = MutableLiveData<Boolean>()
+
+
+    fun searchPhotoFromApiHandle(query:String,page:Int){
+        disposable.add(
+                photoApiClient.getSearchPhoto(query, page)
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeWith(object : DisposableSingleObserver<Model.Search>() {
+                            override fun onSuccess(t: Model.Search?) {
+                               searchDataHandle.value = t
+                                searchError.value = false
+                                searchLoading.value = false
+                            }
+
+                            override fun onError(e: Throwable?) {
+                                e?.printStackTrace()
+                                searchError.value = true
+                                Log.d("searchVmErr", "onError: $e")
+                            }
+
+                        })
+        )
+
+    }
+
+
+    fun searchPhotoFromApi(query:String,page:Int){
+        disposable.add(
+                photoApiClient.getSearchPhoto(query, page)
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeWith(object : DisposableSingleObserver<Model.Search>() {
+                            override fun onSuccess(t: Model.Search?) {
+                                searchData.value = t
+                                searchError.value = false
+                                searchLoading.value = false
+                            }
+
+                            override fun onError(e: Throwable?) {
+                                e?.printStackTrace()
+                                searchError.value = true
+                                Log.d("searchVmErr", "onError: $e")
+                            }
+
+                        })
+        )
+
+    }
+
 
 
     fun photoTopicsFromApiHandle(slug: String,page: Int){

@@ -15,7 +15,7 @@ interface PhotosApi {
     @GET("photos/{id}?client_id=UIGxeHlXUJKZtsaj690S05zfFsMJKO0NSWdCWg2E5tc")
     fun getPhotoDetails(@Path("id")id:String) : Single<Model.Photo>
     @GET("search/photos?client_id=UIGxeHlXUJKZtsaj690S05zfFsMJKO0NSWdCWg2E5tc")
-    fun getSearch(@Query("query")query:String,@Query("per_page")perPage: Int= PER_PAGE,@Query("page")page: Int) : Single<Model.Search>
+    fun getSearch(@Query("query")query:String,@Query("per_page")perPage: Int=20,@Query("page")page: Int) : Single<Model.Search>
 
 
 }

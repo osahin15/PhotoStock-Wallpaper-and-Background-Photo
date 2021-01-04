@@ -26,5 +26,9 @@ class PhotoApiClient {
                 return  photoApi.getPhotoDetails(id)
         }
 
+        fun getSearchPhoto(query:String,page:Int) : Single<Model.Search>{
+                return photoApi.getSearch(query,20,page)
+        }
+
 
 }

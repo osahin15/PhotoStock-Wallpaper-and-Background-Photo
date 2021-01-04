@@ -2,6 +2,8 @@ package com.hawksappstudio.photostockfreewallpapersandphoto.view
 
 import android.os.Bundle
 import android.os.Handler
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -12,6 +14,7 @@ import android.widget.AbsListView
 import android.widget.EditText
 import android.widget.Toast
 import androidx.core.os.bundleOf
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
@@ -21,19 +24,23 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hawksappstudio.photostockfreewallpapersandphoto.R
 import com.hawksappstudio.photostockfreewallpapersandphoto.adapter.StaggeredGridAdapter
+import com.hawksappstudio.photostockfreewallpapersandphoto.adapter.StaggeredGridAdapterSearch
 import com.hawksappstudio.photostockfreewallpapersandphoto.adapter.StaggeredTopicPhotoAdapter
 import com.hawksappstudio.photostockfreewallpapersandphoto.adapter.TopicsAdapter
 import com.hawksappstudio.photostockfreewallpapersandphoto.model.Model
 import com.hawksappstudio.photostockfreewallpapersandphoto.utils.PER_PAGE
 import com.hawksappstudio.photostockfreewallpapersandphoto.viewmodel.FeedViewModel
 import kotlinx.android.synthetic.main.fragment_feed.*
+import java.util.*
 
 
-class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapter.SelectedTopic,StaggeredTopicPhotoAdapter.SelectedPhoto {
+class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapter.SelectedTopic,StaggeredTopicPhotoAdapter.SelectedPhoto,
+        StaggeredGridAdapterSearch.SearchPhoto {
 
     private lateinit var adapter : StaggeredGridAdapter
     private lateinit var topicPhotoAdapter : StaggeredTopicPhotoAdapter
     private var adapterTopic : TopicsAdapter = TopicsAdapter(arrayListOf(),this)
+    private lateinit var searchAdapter : StaggeredGridAdapterSearch
 
 
 
@@ -41,10 +48,11 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
     private lateinit var navController : NavController
 
     private lateinit var  feedViewModel : FeedViewModel
-
+    private var query : String = ""
     private var slug :String = ""
     var isLoading = false
     var currentPage = 1
+    private var totalPage = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +67,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
         val view : View =  inflater.inflate(R.layout.fragment_feed, container, false)
         adapter = StaggeredGridAdapter(requireContext(),this)
         topicPhotoAdapter = StaggeredTopicPhotoAdapter(requireContext(),this)
+        searchAdapter = StaggeredGridAdapterSearch(requireContext(),this)
         return view
     }
 
@@ -67,7 +76,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
 
         feedViewModel = ViewModelProvider(this).get(FeedViewModel::class.java)
         feedViewModel.topicsFromApi()
-        feedViewModel.photoListFromApi(currentPage)
+        feedViewModel.photoListFromApi(1)
 
         navController = Navigation.findNavController(view)
 
@@ -77,10 +86,12 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
 
     }
 
+
     override fun selectedPhoto(image: Model.Photo) {
         val bundle = bundleOf("imageId" to image.id)
         navController.navigate(R.id.action_feedFragment_to_detailsFragment,bundle)
     }
+
 
     private fun initView(){
         val edittext = view?.findViewById<EditText>(R.id.searchText)
@@ -137,8 +148,35 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
         homeBtn.setOnClickListener {
             adapterTopic.setSelectedTopic()
             fragmentManager?.beginTransaction()?.detach(this)?.attach(this)?.commit()
-
         }
+
+        textWatcher()
+
+        searchSend.setOnClickListener {
+            query = searchText.text.toString().toLowerCase(Locale.ROOT).trim()
+            currentPage = 1
+            if (query.isEmpty()){
+                Toast.makeText(requireContext(), "Search isn't Empty.", Toast.LENGTH_SHORT).show()
+            }
+
+            feedViewModel.searchPhotoFromApi(query,currentPage)
+
+            searchBtn.visibility = View.VISIBLE
+            homeBtn.visibility = View.VISIBLE
+
+            it.visibility = View.GONE
+            searchSwipy.visibility = View.VISIBLE
+            swipyRefresh.visibility= View.GONE
+            swipyRefreshTopic.visibility = View.GONE
+
+            searchText.visibility = View.GONE
+
+            searchText.setText("")
+            frontView.visibility = View.GONE
+        }
+
+        observeSearchPhoto()
+
     }
     private fun initRecycler(){
 
@@ -158,15 +196,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
 
         }
 
-        /*staggeredView.addOnScrollListener(object : RecyclerView.OnScrollListener(){
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (!recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE){
-                    currentPage++
-                    feedViewModel.photoListFromApi(currentPage)
-                }
-            }
-        })*/
+
         staggeredView.adapter = adapter
 
 
@@ -180,20 +210,48 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
             feedViewModel.photoTopicsFromApiHandle(slug,currentPage)
 
         }
-
-       /* topicPhotoRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener(){
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (!recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE){
-
-                }
-            }
-        })*/
-
         topicPhotoRecycler.adapter = topicPhotoAdapter
 
+       searchRecycler.apply {
+            val sLayoutManager = StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL)
+            this.layoutManager = sLayoutManager
+        }
+
+        searchSwipy.setOnRefreshListener {
+            if (currentPage <= totalPage){
+                currentPage++
+                feedViewModel.searchPhotoFromApiHandle(query,currentPage)
+            }
+        }
+        searchRecycler.adapter = searchAdapter
 
     }
+
+   private fun textWatcher(){
+
+        searchText.addTextChangedListener(object : TextWatcher{
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+
+            }
+
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+
+                if (p3!=0){
+                    searchSend.visibility = View.VISIBLE
+                    closeSearchBtn.visibility = View.GONE
+                }else{
+                    searchSend.visibility = View.GONE
+                }
+
+            }
+
+            override fun afterTextChanged(p0: Editable?) {
+
+            }
+
+        })
+    }
+
 
     private fun observePhotoListLiveData(){
 
@@ -201,10 +259,12 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
             it.let {
                 Log.d("photogelmesi", "observePhotoListLiveData: ${it.size}")
                 paginationProgressBar.visibility = View.GONE
+                searchRecycler.visibility = View.GONE
+                topicPhotoRecycler.visibility = View.GONE
+                staggeredView.visibility = View.VISIBLE
                 swipyRefresh.isRefreshing = false
                 isLoading = false
-                staggeredView.visibility = View.VISIBLE
-                topicPhotoRecycler.visibility = View.GONE
+
                 adapter.updatePhotoList(it.toList())
             }
         })
@@ -268,7 +328,9 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
     private fun observeTopicPhoto(){
         feedViewModel.photoDataTopics.observe(viewLifecycleOwner, {
             it.let {
+                paginationProgressBar.visibility = View.GONE
                 staggeredView.visibility = View.GONE
+                searchRecycler.visibility = View.GONE
                 topicPhotoRecycler.visibility = View.VISIBLE
                 Log.d("topicPhoto", "observeTopicPhoto: ${it.get(0).id} ")
                 topicPhotoAdapter.updatePhotoList(it.toList())
@@ -294,12 +356,14 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
             }
         })
     }
+
+
     private fun observeTopicPhotoHandle(){
         feedViewModel.photoDataTopicsHandle.observe(viewLifecycleOwner, {
             it.let {
-                staggeredView.visibility = View.GONE
-                swipyRefreshTopic.isRefreshing = false
+                paginationProgressBar.visibility  = View.GONE
                 topicPhotoRecycler.visibility = View.VISIBLE
+                swipyRefreshTopic.isRefreshing = false
                 Log.d("topicPhotoHandle", "observeTopicPhoto: ${it.get(0).id} ")
                 topicPhotoAdapter.addPhotoList(it.toList())
             }
@@ -316,7 +380,6 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
             it.let {
                 if (it){
                     swipyRefreshTopic.isRefreshing = true
-                    paginationProgressBar.visibility = View.VISIBLE
                     topicPhotoRecycler.visibility = View.GONE
                 }else{
                     swipyRefreshTopic.isRefreshing = false
@@ -330,6 +393,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
         super.onActivityCreated(savedInstanceState)
         observePhotoListLiveData()
         observeTopicPhotoHandle()
+        observeSearchHandle()
     }
     override fun selectedTopic(topic: Model.Topic) {
         //selectTopicText.visibility = View.VISIBLE
@@ -347,6 +411,76 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
         Log.d("selectTopic", "selectedTopic: $topic")
         feedViewModel.photoTopicsFromApi(this.slug,1)
         observeTopicPhoto()
+
+    }
+
+
+    private fun observeSearchHandle(){
+
+        feedViewModel.searchDataHandle.observe(viewLifecycleOwner,{
+            it.let {
+                paginationProgressBar.visibility  = View.GONE
+                searchSwipy.isRefreshing = false
+                searchAdapter.addPhotoList(it.results)
+            }
+        })
+        feedViewModel.searchError.observe(viewLifecycleOwner,{
+            it.let {
+                if (it){
+                    Toast.makeText(requireContext(),"Search Photo Loading Error! $it",Toast.LENGTH_SHORT).show()
+                    searchRecycler.visibility = View.GONE
+                }
+            }
+        })
+        feedViewModel.searchLoading.observe(viewLifecycleOwner,{
+            it.let {
+                if (it){
+                    searchSwipy.isRefreshing = true
+                    searchRecycler.visibility = View.GONE
+                }else{
+                    paginationProgressBar.visibility  = View.GONE
+                    searchSwipy.isRefreshing = false
+                }
+            }
+        })
+    }
+    private fun observeSearchPhoto(){
+        feedViewModel.searchData.observe(viewLifecycleOwner, {
+            it.let {
+                Log.d("searchPhoto", "observeSearchPhoto: ${it.results.size}")
+                Log.d("searchTotalPage", "observeSearchPhoto: ${it.total_pages}")
+
+                staggeredView.visibility = View.GONE
+                topicPhotoRecycler.visibility = View.GONE
+                paginationProgressBar.visibility = View.GONE
+
+                searchRecycler.visibility = View.VISIBLE
+                searchAdapter.updatePhotoList(it.results)
+
+                totalPage = it.total_pages!!
+            }
+        })
+        feedViewModel.searchError.observe(viewLifecycleOwner,{
+            it.let {
+                if (it){
+                    Toast.makeText(requireContext(),"Search Photo Loading Error! $it",Toast.LENGTH_SHORT).show()
+                    searchRecycler.visibility = View.GONE
+                }
+            }
+        })
+        feedViewModel.searchLoading.observe(viewLifecycleOwner,{
+            it.let {
+                if (it){
+                    paginationProgressBar.visibility = View.VISIBLE
+                    searchRecycler.visibility = View.GONE
+                }else{
+                    paginationProgressBar.visibility  = View.GONE
+                }
+            }
+        })
+    }
+
+    override fun searchPhotoSelect(image: Model.Photo) {
 
     }
 
