@@ -37,7 +37,9 @@ class Model {
             @SerializedName("width")
             val width:Int,
             @SerializedName("height")
-            val height:Int
+            val height:Int,
+            @SerializedName("links")
+            val links : Links
     )
     data class Tags(
             @SerializedName("title")
@@ -65,7 +67,9 @@ class Model {
 
     data class Links(
             @SerializedName("html")
-            val html:String
+            val html:String,
+            @SerializedName("download")
+            val download:String
     )
 
 

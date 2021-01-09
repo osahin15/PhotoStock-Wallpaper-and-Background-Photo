@@ -6,8 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bgmain"
-    tools:context=".view.MainActivity"
-    android:fitsSystemWindows="true">
+    tools:context=".view.MainActivity">
 
 
     <AutoCompleteTextView
@@ -31,7 +30,6 @@
         android:singleLine="true"
         android:textColor="@color/black"
         android:textColorHint="#616161"
-        android:textCursorDrawable="@android:color/black"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -47,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/paginationProgressBar"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/feed_banner"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -56,7 +54,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:srl_direction="bottom"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/feed_banner"
         app:layout_constraintEnd_toStartOf="@+id/topic_linear"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -80,7 +78,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:srl_direction="bottom"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/feed_banner"
         app:layout_constraintEnd_toStartOf="@+id/topic_linear"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -106,7 +104,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:srl_direction="bottom"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/feed_banner"
         app:layout_constraintEnd_toStartOf="@+id/topic_linear"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -205,13 +203,16 @@
         android:fitsSystemWindows="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/feed_banner"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="35dp">
+        android:layout_marginEnd="35dp"
+        android:layout_marginBottom="15dp"
+        >
 
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/searchBtn"
+        android:onClick="changeKeyboardState"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="10dp"
@@ -219,7 +220,8 @@
         android:contentDescription="@string/search"
         android:src="@drawable/ic_baseline_search_24"
         app:backgroundTint="@color/white"
-        app:rippleColor="@color/white" />
+        app:rippleColor="@color/white"
+        tools:ignore="OnClick" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/closeSearchBtn"
@@ -254,8 +256,33 @@
         android:visibility="gone"
         app:backgroundTint="@color/white"
         app:rippleColor="@color/white" />
-
     </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Swipe"
+        android:textStyle="bold|italic"
+        android:fontFamily="sans-serif-condensed"
+        android:drawableStart="@drawable/ic_baseline_arrow_upward_24"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/feed_banner"
+        android:layout_marginStart="50dp"
+        android:layout_marginBottom="10dp"/>
+
+    <com.google.android.gms.ads.AdView
+        android:layout_marginBottom="25dp"
+        xmlns:ads="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/feed_banner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:ignore="MissingConstraints"
+        ads:adSize="SMART_BANNER"
+        ads:adUnitId="ca-app-pub-3058271853907431/6435071325"
+        />
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

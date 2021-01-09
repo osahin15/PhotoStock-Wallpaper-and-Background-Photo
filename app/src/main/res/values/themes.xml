@@ -11,6 +11,14 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+
+        <item name="snackbarStyle">@style/MySnackbar</item>
         <!-- Customize your theme here. -->
     </style>
+
+    <style name="MySnackbar" parent="Widget.MaterialComponents.Snackbar">
+        <item name="android:layout_margin">30dp</item>
+    </style>
+
+
 </resources>

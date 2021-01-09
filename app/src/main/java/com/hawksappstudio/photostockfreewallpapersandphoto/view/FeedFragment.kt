@@ -1,18 +1,20 @@
 package com.hawksappstudio.photostockfreewallpapersandphoto.view
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Bundle
 import android.os.Handler
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.view.animation.AnimationUtils
-import android.widget.AbsListView
-import android.widget.EditText
-import android.widget.Toast
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.*
 import androidx.core.os.bundleOf
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
@@ -21,6 +23,9 @@ import androidx.navigation.Navigation
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hawksappstudio.photostockfreewallpapersandphoto.R
 import com.hawksappstudio.photostockfreewallpapersandphoto.adapter.StaggeredGridAdapter
@@ -33,9 +38,10 @@ import com.hawksappstudio.photostockfreewallpapersandphoto.viewmodel.FeedViewMod
 import kotlinx.android.synthetic.main.fragment_feed.*
 import java.util.*
 
+//ca-app-pub-3058271853907431/6435071325 banner
 
 class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapter.SelectedTopic,StaggeredTopicPhotoAdapter.SelectedPhoto,
-        StaggeredGridAdapterSearch.SearchPhoto {
+        StaggeredGridAdapterSearch.SearchPhoto , View.OnClickListener {
 
     private lateinit var adapter : StaggeredGridAdapter
     private lateinit var topicPhotoAdapter : StaggeredTopicPhotoAdapter
@@ -53,7 +59,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
     var isLoading = false
     var currentPage = 1
     private var totalPage = 1
-
+    lateinit var mAdView : AdView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -68,6 +74,12 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
         adapter = StaggeredGridAdapter(requireContext(),this)
         topicPhotoAdapter = StaggeredTopicPhotoAdapter(requireContext(),this)
         searchAdapter = StaggeredGridAdapterSearch(requireContext(),this)
+
+        MobileAds.initialize(requireContext())
+        mAdView = view.findViewById(R.id.feed_banner)
+        val adRequest = AdRequest.Builder().build()
+        mAdView.loadAd(adRequest)
+
         return view
     }
 
@@ -93,6 +105,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
     }
 
 
+    @SuppressLint("CutPasteId")
     private fun initView(){
         val edittext = view?.findViewById<EditText>(R.id.searchText)
         val frontView = view?.findViewById<View>(R.id.frontView)
@@ -116,7 +129,9 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
             }
         }
 
+
         searchBtn.setOnClickListener {
+
             frontView!!.visibility = View.VISIBLE
             edittext!!.visibility = View.VISIBLE
             edittext.startAnimation(animation)
@@ -159,7 +174,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
                 Toast.makeText(requireContext(), "Search isn't Empty.", Toast.LENGTH_SHORT).show()
             }
 
-            feedViewModel.searchPhotoFromApi(query,currentPage)
+            feedViewModel.searchPhotoFromApi(query,1)
 
             searchBtn.visibility = View.VISIBLE
             homeBtn.visibility = View.VISIBLE
@@ -227,6 +242,7 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
 
     }
 
+
    private fun textWatcher(){
 
         searchText.addTextChangedListener(object : TextWatcher{
@@ -241,6 +257,9 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
                     closeSearchBtn.visibility = View.GONE
                 }else{
                     searchSend.visibility = View.GONE
+                    if (searchText.visibility == View.VISIBLE){
+                        closeSearchBtn.visibility  = View.VISIBLE
+                    }
                 }
 
             }
@@ -250,7 +269,36 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
             }
 
         })
+
+        searchText.setOnKeyListener(object : View.OnKeyListener{
+            override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
+                if (event?.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER){
+                    query = searchText.text.toString().toLowerCase(Locale.ROOT).trim()
+                    currentPage = 1
+                    if (query.isEmpty()){
+                        Toast.makeText(requireContext(), "Search isn't Empty.", Toast.LENGTH_SHORT).show()
+                    }
+
+                    feedViewModel.searchPhotoFromApi(query,1)
+
+                    searchBtn.visibility = View.VISIBLE
+                    homeBtn.visibility = View.VISIBLE
+                    searchSend.visibility = View.GONE
+
+                    searchSwipy.visibility = View.VISIBLE
+                    swipyRefresh.visibility= View.GONE
+                    swipyRefreshTopic.visibility = View.GONE
+
+                    searchText.visibility = View.GONE
+                    searchText.setText("")
+                    frontView.visibility = View.GONE
+                }
+                return false
+            }
+
+        })
     }
+
 
 
     private fun observePhotoListLiveData(){
@@ -481,7 +529,11 @@ class FeedFragment : Fragment(), StaggeredGridAdapter.SelectedPhoto,TopicsAdapte
     }
 
     override fun searchPhotoSelect(image: Model.Photo) {
+        val bundle = bundleOf("imageId" to image.id)
+        navController.navigate(R.id.action_feedFragment_to_detailsFragment,bundle)
+    }
 
+    override fun onClick(view: View?) {
     }
 
 

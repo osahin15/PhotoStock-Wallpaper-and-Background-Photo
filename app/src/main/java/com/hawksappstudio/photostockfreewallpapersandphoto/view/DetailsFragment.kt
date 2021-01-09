@@ -4,10 +4,10 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.DownloadManager
-import android.content.Context
+import android.app.ProgressDialog
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -15,8 +15,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
+import android.provider.MediaStore
 import android.text.SpannableString
 import android.text.style.UnderlineSpan
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -24,6 +26,7 @@ import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -36,9 +39,11 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.InterstitialAd
+import com.google.android.gms.ads.MobileAds
 import com.google.android.material.snackbar.Snackbar
 import com.hawksappstudio.photostockfreewallpapersandphoto.R
 import com.hawksappstudio.photostockfreewallpapersandphoto.model.Model
@@ -48,11 +53,15 @@ import kotlinx.android.synthetic.main.fragment_details.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.OutputStream
 import java.lang.StringBuilder
-import java.util.jar.Manifest
+import java.util.*
 
 
 class DetailsFragment : Fragment() {
+
+
+    //ca-app-pub-3058271853907431/9316207921 interstitial
 
     private val requestOptions = RequestOptions().placeholder(R.color.black)
     private var USER_HTML = "https://unsplash.com/"
@@ -65,9 +74,17 @@ class DetailsFragment : Fragment() {
 
     private lateinit var  detailsViewModel : DetailsViewModel
 
+    private lateinit var mInterstitialAd: InterstitialAd
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         imageId = arguments?.getString("imageId").toString()
+
+        MobileAds.initialize(requireContext()) {}
+
+        mInterstitialAd = InterstitialAd(requireContext())
+        mInterstitialAd.adUnitId = "ca-app-pub-3058271853907431/9316207921"
+        mInterstitialAd.loadAd(AdRequest.Builder().build())
     }
 
     @SuppressLint("ResourceType")
@@ -110,6 +127,11 @@ class DetailsFragment : Fragment() {
                 info_Layout.visibility = View.GONE
                 info_Layout.startAnimation(animationClose)
             }
+            if (mInterstitialAd.isLoaded) {
+                mInterstitialAd.show()
+            } else {
+                Log.d("interstitial", "The interstitial wasn't loaded yet.")
+            }
         }
 
 
@@ -126,8 +148,7 @@ class DetailsFragment : Fragment() {
         }
 
         backButton.setOnClickListener {
-            //navController.navigate(R.id.action_detailsFragment_to_feedFragment)
-            requireActivity().onBackPressed()
+            navController.navigate(R.id.action_detailsFragment_to_feedFragment)
         }
 
         download.setOnClickListener {
@@ -287,49 +308,122 @@ class DetailsFragment : Fragment() {
       }
   }
 
-    fun downloadImage(url:String){
-        val directory = File(Environment.DIRECTORY_PICTURES)
-        if (!directory.exists()){
-            directory.mkdirs()
-        }
+    private fun downloadImage(url:String) {
 
-        val downloadManager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        var dialog = ProgressDialog(requireContext())
+         dialog.setMessage("Downloading..")
+         dialog.show()
+        val mCoordinator = requireActivity().findViewById<ConstraintLayout>(R.id.constrainDetail)
 
-        val downloadUri = Uri.parse(url)
+        val snackbar = Snackbar.make(mCoordinator, R.string.image_saved_success, Snackbar.LENGTH_INDEFINITE)
+        var sbview = snackbar.view
+        sbview.setBackgroundColor(ContextCompat.getColor(requireContext(),R.color.link_blue))
+        val name = UUID.randomUUID().toString()
 
-        val request = DownloadManager.Request(downloadUri).apply {
-            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
-                    .setAllowedOverRoaming(false)
-                    .setTitle(url.substring(url.lastIndexOf("/")+1))
-                    .setDescription("")
-                    .setDestinationInExternalPublicDir(
-                            directory.toString(),
-                            url.substring(url.lastIndexOf("/")+1)
-                    )
-        }
+        Glide.with(requireContext()).asBitmap().load(url).into( object : CustomTarget<Bitmap>(){
+            override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
 
-        val downloadId = downloadManager.enqueue(request)
-        val query = DownloadManager.Query().setFilterById(downloadId)
-        Thread(Runnable {
-            var downloading = true
-            while (downloading){
-                val cursor : Cursor = downloadManager.query(query)
-                cursor.moveToFirst()
-                if (cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))== DownloadManager.STATUS_SUCCESSFUL){
-                    downloading = false
-                }
-                val status  = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
-                msg = statusMessage(url,directory,status)
-                if(msg!=lastMsg){
-                    requireActivity().runOnUiThread{
-                        Toast.makeText(activity,msg,Toast.LENGTH_SHORT).show()
+
+                var fos : OutputStream?=null
+                if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
+                    var resolver = context?.contentResolver
+                    var contentValues = ContentValues()
+                    contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, "$name.jpg")
+                    contentValues.put(MediaStore.Images.Media.MIME_TYPE,"image/jpg")
+                    contentValues.put(MediaStore.Images.Media.RELATIVE_PATH,Environment.DIRECTORY_PICTURES)
+                    var url : Uri?=null
+                    var imageUri =
+                        resolver?.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,contentValues)
+                    Log.d("download", "onBitmapLoaded: ${imageUri.toString()} ")
+                    if (resolver != null) {
+                        fos = resolver.openOutputStream(imageUri!!)
                     }
-                    lastMsg = msg ?: ""
+                }else{
+                    var imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString()
+                    var image = File(imagesDir, "$name.jpg")
+                    fos = FileOutputStream(image)
                 }
-                cursor.close()
+
+
+                val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100,fos)
+                fos?.close()
+
+                dialog.dismiss()
+                snackbar.setAction("Open"){
+                    val intent = Intent()
+                    intent.type = "image/*"
+                    intent.action = Intent.ACTION_VIEW
+                    intent.data = contentUri
+                    context?.startActivity(Intent.createChooser(intent, "Select Gallery App"))
+                    snackbar.dismiss()
+                }.show()
+            Handler().postDelayed({
+                snackbar.dismiss()
+            },5000)
+
             }
-        }).start()
+            override fun onLoadCleared(placeholder: Drawable?) {
+            }
+
+        })
+
     }
+
+
+    /*fun downloadImage(url:String){
+
+        try{
+            val directory = File(Environment.DIRECTORY_PICTURES)
+            if (!directory.exists()){
+                directory.mkdirs()
+            }
+
+            val downloadManager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+
+            val downloadUri = Uri.parse(url)
+
+            val request = DownloadManager.Request(downloadUri).apply {
+                setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
+                        .setAllowedOverRoaming(false)
+                        .setTitle(url.substring(url.lastIndexOf("/")+1))
+                        .setDescription("")
+                        .setDestinationInExternalPublicDir(
+                                directory.toString(), url.substring(url.lastIndexOf("/")+1)
+                        )
+            }
+
+            val downloadId = downloadManager.enqueue(request)
+            val query = DownloadManager.Query().setFilterById(downloadId)
+            Thread(Runnable {
+                var downloading = true
+                while (downloading){
+                    val cursor : Cursor = downloadManager.query(query)
+                    cursor.moveToFirst()
+                    if (cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))== DownloadManager.STATUS_SUCCESSFUL){
+                        downloading = false
+                    }
+                    val status  = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+                    msg = statusMessage(url,directory,status)
+
+                    if(msg!=lastMsg){
+                        requireActivity().runOnUiThread{
+                            Toast.makeText(activity,msg,Toast.LENGTH_SHORT).show()
+                        }
+                        lastMsg = msg ?: ""
+                    }
+                    cursor.close()
+                }
+            }).start()
+
+        }catch (e : Exception){
+            Toast.makeText(requireContext(),"Image Download Failed", Toast.LENGTH_SHORT).show()
+        }
+
+
+
+    }*/
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
        when(requestCode){
@@ -378,9 +472,7 @@ class DetailsFragment : Fragment() {
             DownloadManager.STATUS_PAUSED -> "Paused"
             DownloadManager.STATUS_PENDING -> "Pending"
             DownloadManager.STATUS_RUNNING -> "Downloading..."
-            DownloadManager.STATUS_SUCCESSFUL -> "Image downloaded successfully in $directory" + File.separator + url.substring(
-                    url.lastIndexOf("/") + 1
-            )
+            DownloadManager.STATUS_SUCCESSFUL -> "Image downloaded successfully"
             else -> "There's nothing to download"
         }
         return msg

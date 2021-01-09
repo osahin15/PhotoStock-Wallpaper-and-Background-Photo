@@ -18,4 +18,6 @@ interface PhotosApi {
     fun getSearch(@Query("query")query:String,@Query("per_page")perPage: Int=20,@Query("page")page: Int) : Single<Model.Search>
 
 
+
+
 }
