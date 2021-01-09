@@ -372,59 +372,6 @@ class DetailsFragment : Fragment() {
     }
 
 
-    /*fun downloadImage(url:String){
-
-        try{
-            val directory = File(Environment.DIRECTORY_PICTURES)
-            if (!directory.exists()){
-                directory.mkdirs()
-            }
-
-            val downloadManager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-
-            val downloadUri = Uri.parse(url)
-
-            val request = DownloadManager.Request(downloadUri).apply {
-                setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
-                        .setAllowedOverRoaming(false)
-                        .setTitle(url.substring(url.lastIndexOf("/")+1))
-                        .setDescription("")
-                        .setDestinationInExternalPublicDir(
-                                directory.toString(), url.substring(url.lastIndexOf("/")+1)
-                        )
-            }
-
-            val downloadId = downloadManager.enqueue(request)
-            val query = DownloadManager.Query().setFilterById(downloadId)
-            Thread(Runnable {
-                var downloading = true
-                while (downloading){
-                    val cursor : Cursor = downloadManager.query(query)
-                    cursor.moveToFirst()
-                    if (cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))== DownloadManager.STATUS_SUCCESSFUL){
-                        downloading = false
-                    }
-                    val status  = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
-                    msg = statusMessage(url,directory,status)
-
-                    if(msg!=lastMsg){
-                        requireActivity().runOnUiThread{
-                            Toast.makeText(activity,msg,Toast.LENGTH_SHORT).show()
-                        }
-                        lastMsg = msg ?: ""
-                    }
-                    cursor.close()
-                }
-            }).start()
-
-        }catch (e : Exception){
-            Toast.makeText(requireContext(),"Image Download Failed", Toast.LENGTH_SHORT).show()
-        }
-
-
-
-    }*/
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
        when(requestCode){
            123->{
