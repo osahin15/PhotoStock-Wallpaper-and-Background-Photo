@@ -54,6 +54,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
+import java.lang.Exception
 import java.lang.StringBuilder
 import java.util.*
 
@@ -310,61 +311,68 @@ class DetailsFragment : Fragment() {
 
     private fun downloadImage(url:String) {
 
-        var dialog = ProgressDialog(requireContext())
-         dialog.setMessage("Downloading..")
-         dialog.show()
+
+        detailsProgress.visibility = View.VISIBLE
         val mCoordinator = requireActivity().findViewById<ConstraintLayout>(R.id.constrainDetail)
 
         val snackbar = Snackbar.make(mCoordinator, R.string.image_saved_success, Snackbar.LENGTH_INDEFINITE)
         var sbview = snackbar.view
         sbview.setBackgroundColor(ContextCompat.getColor(requireContext(),R.color.link_blue))
+        snackbar.setActionTextColor(ContextCompat.getColor(requireContext(),R.color.black))
         val name = UUID.randomUUID().toString()
 
         Glide.with(requireContext()).asBitmap().load(url).into( object : CustomTarget<Bitmap>(){
             override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
 
-
-                var fos : OutputStream?=null
-                if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
-                    var resolver = context?.contentResolver
-                    var contentValues = ContentValues()
-                    contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, "$name.jpg")
-                    contentValues.put(MediaStore.Images.Media.MIME_TYPE,"image/jpg")
-                    contentValues.put(MediaStore.Images.Media.RELATIVE_PATH,Environment.DIRECTORY_PICTURES)
-                    var url : Uri?=null
-                    var imageUri =
-                        resolver?.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,contentValues)
-                    Log.d("download", "onBitmapLoaded: ${imageUri.toString()} ")
-                    if (resolver != null) {
-                        fos = resolver.openOutputStream(imageUri!!)
+                try {
+                    var fos : OutputStream?=null
+                    if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
+                        var resolver = context?.contentResolver
+                        var contentValues = ContentValues()
+                        contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, "$name.jpg")
+                        contentValues.put(MediaStore.Images.Media.MIME_TYPE,"image/jpg")
+                        contentValues.put(MediaStore.Images.Media.RELATIVE_PATH,Environment.DIRECTORY_PICTURES)
+                        var url : Uri?=null
+                        var imageUri =
+                                resolver?.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,contentValues)
+                        Log.d("download", "onBitmapLoaded: ${imageUri.toString()} ")
+                        if (resolver != null) {
+                            fos = resolver.openOutputStream(imageUri!!)
+                        }
+                    }else{
+                        var imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString()
+                        var image = File(imagesDir, "$name.jpg")
+                        fos = FileOutputStream(image)
                     }
-                }else{
-                    var imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString()
-                    var image = File(imagesDir, "$name.jpg")
-                    fos = FileOutputStream(image)
+
+
+                    val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
+                    bitmap.compress(Bitmap.CompressFormat.JPEG,100,fos)
+                    fos?.close()
+
+                    detailsProgress.visibility  = View.GONE
+                    snackbar.setAction("Open"){
+
+                        val intent = Intent()
+                        intent.type = "image/*"
+                        intent.action = Intent.ACTION_VIEW
+                        intent.data = contentUri
+                        context?.startActivity(Intent.createChooser(intent, "Select Gallery App"))
+                        snackbar.dismiss()
+                    }.show()
+                    Handler().postDelayed({
+                        snackbar.dismiss()
+                    },6000)
+
+                } catch (e:Exception){
+                    e.printStackTrace()
+                    Toast.makeText(requireContext(),"Download Failed",Toast.LENGTH_SHORT).show()
                 }
-
-
-                val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-
-                bitmap.compress(Bitmap.CompressFormat.JPEG,100,fos)
-                fos?.close()
-
-                dialog.dismiss()
-                snackbar.setAction("Open"){
-                    val intent = Intent()
-                    intent.type = "image/*"
-                    intent.action = Intent.ACTION_VIEW
-                    intent.data = contentUri
-                    context?.startActivity(Intent.createChooser(intent, "Select Gallery App"))
-                    snackbar.dismiss()
-                }.show()
-            Handler().postDelayed({
-                snackbar.dismiss()
-            },5000)
 
             }
             override fun onLoadCleared(placeholder: Drawable?) {
+                Toast.makeText(requireContext(),"Photo Load Failed",Toast.LENGTH_SHORT).show()
             }
 
         })
